@@ -1,0 +1,3 @@
+[submodule "SSVM"]
+	path = SSVM
+	url = git@github.com:second-state/SSVM.git
