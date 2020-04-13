@@ -14,13 +14,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use evmc_sys::*;
+use evmc_sys as ffi;
 use libloading::{Library, Symbol};
-use std::ffi::CStr;
 use std::ptr;
 use std::str;
 
-type EvmcCreate = extern "C" fn() -> *mut evmc_instance;
+type EvmcCreate = extern "C" fn() -> *mut ffi::evmc_instance;
 
 #[derive(Debug)]
 pub enum EvmcLoaderErrorCode {
@@ -49,11 +48,9 @@ pub enum EvmcLoaderErrorCode {
     EvmcLoaderInvalidOptionValue = 7,
 }
 
-pub fn evmc_load_and_create(fname: &str) -> (*mut evmc_instance, EvmcLoaderErrorCode) {
+pub fn evmc_load_and_create(fname: &str) -> (*mut ffi::evmc_instance, EvmcLoaderErrorCode) {
     unsafe {
-        println!("load lld: {:?}", fname);
-
-        let mut instance: *mut evmc_instance = ptr::null_mut();
+        let mut instance: *mut ffi::evmc_instance = ptr::null_mut();
 
         let library: Library = match Library::new(fname) {
             Ok(lib) => lib,
@@ -78,12 +75,11 @@ pub fn evmc_load_and_create(fname: &str) -> (*mut evmc_instance, EvmcLoaderError
             );
         }
 
-        if (*instance).abi_version != std::mem::transmute::<_bindgen_ty_1, i32>(EVMC_ABI_VERSION) {
+        if (*instance).abi_version
+            != std::mem::transmute::<ffi::_bindgen_ty_1, i32>(ffi::EVMC_ABI_VERSION)
+        {
             return (instance, EvmcLoaderErrorCode::EvmcLoaderAbiVersionMismatch);
         }
-
-        let c_str: &CStr = CStr::from_ptr((*instance).name);
-        println!("create evmcvm: {:?}", c_str.to_str().unwrap());
         return (instance, EvmcLoaderErrorCode::EvmcLoaderSucces);
     }
 }

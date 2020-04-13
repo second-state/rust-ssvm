@@ -14,17 +14,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::path::Path;
-extern crate cmake;
-use cmake::Config;
+pub use evmc_sys as ffi;
 
-fn build_link_ssvm_dylib() {
-    let dst = Config::new("SSVM").no_build_target(true).build();
-    let evmcssvm_path = Path::new(&dst).join("build/tools/ssvm-evmc");
-    println!("cargo:rustc-link-search=native={}", evmcssvm_path.display());
-    println!("cargo:rustc-link-lib=dylib=ssvmEVMC");
-}
+pub const ADDRESS_LENGTH: usize = 20;
+pub const BYTES32_LENGTH: usize = 32;
+pub type Address = [u8; ADDRESS_LENGTH];
+pub type Bytes32 = [u8; BYTES32_LENGTH];
+pub type Bytes = [u8];
 
-fn main() {
-    build_link_ssvm_dylib();
-}
+pub type StorageStatus = ffi::evmc_storage_status;
+pub type CallKind = ffi::evmc_call_kind;
+pub type Revision = ffi::evmc_revision;
+pub type StatusCode = ffi::evmc_status_code;
