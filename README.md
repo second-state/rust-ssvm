@@ -7,41 +7,42 @@ The software architecture of rust-ssvm was inspired by [go-ethereum](https://git
 
 - Design architecture
 ```
-rust-ssvm :                                     ┌────────────────────────────────────────────────┐
-stack diagram                                   │                   rust-ssvm                    │
-                                                ├────────────────────────────────────────────────┤
-                                                │             lib.rs (pub interface)             │
-                                                ├────────────────────────────────┬───────────────┤
-go-ethereum :                                   │   host.rs (hook host context)  │   loader.rs   │
+rust-ssvm :                                  ┌───────────────────────────────────────────────┐
+stack diagram                                │                  rust-ssvm                    │
+                                             ├───────────────────────────────────────────────┤
+                                             │            lib.rs (pub interface)             │
+                                             ├──────────────────────┬────────────┬───────────┤
+                                             │  host.rs             │    SSVM    │ loader.rs │
+go-ethereum :                                │  (hook host context) │            └───────────┤
 sequential diagram
-                                                                             ┌───────────────────┐
- ┌───────────────────┐  ┌────────────────────┐  ┌─────────────────────────┐  │     C module      │
- │geth/core/vm/evm.go│  │geth/core/vm/evmc.go│  │evmc/bindings/.../evmc.go│  │ex. loader and hera│
- └─────────┬─────────┘  └─────────┬──────────┘  └────────────┬────────────┘  └─────────┬─────────┘
- NewEVM    │ NewEVMC              │                          │                         │
-──────────>│─────────────────────>│                          │                         │
-           │            CreateVM ─┤                          │                      ╔═══════════════════════╗
-           │                      │ Load                     │                      ║Loader                ░║
-           │                      │ ────────────────────────>│                      ║loader.h / loader.cpp  ║
-           │                      │                          │ evmc_load_and_create ╚═══════════════════════╝
-           │                      │                          │────────────────────────>│
-           │                      │                          │       load EVMC VM .so ─┤
-           │                      │                          │       call evmc_create ─┤
-           │                      │                          │                         │
-           │                      │ return Instance {handle} │ return evmc_instance    │
-           │<─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │<─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │
-           │                      │                          │                         │
- run       │ Run                  │                          │                         │
-──────────>│─────────────────────>│                          │                      ╔════════════════════════╗
-           │                      │ Execute                  │                      ║EVMC VM implementation ░║
-           │                      │ ────────────────────────>│                      ║ex. Hera vm             ║
-           │                      │                          │ evmc_execute         ╚════════════════════════╝
-           │                      │                          │────────────────────────>│
-           │                      │                          │                execute ─┤
-           │                      │ return output, gasLeft,  │                         │
-           │                      │        err               │return evmc_result       │
-           │<─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │<─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │
-           │                      │                          │                         │
+                                                                         ┌───────────────────┐
+┌───────────────────┐ ┌────────────────────┐ ┌─────────────────────────┐ │     C module      │
+│geth/core/vm/evm.go│ │geth/core/vm/evmc.go│ │evmc/bindings/.../evmc.go│ │ex. loader and hera│
+└─────────┬─────────┘ └─────────┬──────────┘ └────────────┬────────────┘ └─────────┬─────────┘
+ NewEVM   │ NewEVMC             │                         │                        │
+─────────>│────────────────────>│                         │                        │
+          │           CreateVM ─┤                         │                        │
+          │                     │ Load                    │                      ╔═══════════╗
+          │                     │ ───────────────────────>│                      ║Loader    ░║
+          │                     │                         │ evmc_load_and_create ╚═══════════╝
+          │                     │                         │────────────────────────>│
+          │                     │                         │       load EVMC VM .so ─┤
+          │                     │                         │       call evmc_create ─┤
+          │                     │                         │                         │
+          │                     │ return Instance{handle} │ return evmc_instance    │
+          │<─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │<─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │
+          │                     │                         │                         │
+ run      │ Run                 │                         │                         │
+─────────>│────────────────────>│                         │                      ╔═══════════╗
+          │                     │ Execute                 │                      ║EVMC VM   ░║
+          │                     │ ───────────────────────>│                      ║ex. Hera   ║
+          │                     │                         │ evmc_execute         ╚═══════════╝
+          │                     │                         │────────────────────────>│
+          │                     │                         │                execute ─┤
+          │                     │ return output, gasLeft, │                         │
+          │                     │        err              │return evmc_result       │
+          │<─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │<─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │
+          │                     │                         │                         │
 ```
 
 ## Build environment

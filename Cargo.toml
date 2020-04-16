@@ -10,8 +10,6 @@ build="build.rs"
 
 [dependencies]
 evmc-sys = { git = "https://github.com/ethereum/evmc", tag = "v6.3.1" }
-evmc-vm = { git = "https://github.com/ethereum/evmc/", tag = "v6.3.1" }
-evmc-declare = { git = "https://github.com/ethereum/evmc/", tag = "v6.3.1" }
 libloading = "0.5"
 
 [build-dependencies]
