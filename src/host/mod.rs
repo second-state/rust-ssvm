@@ -19,18 +19,25 @@ use evmc_sys as ffi;
 pub use types::*;
 
 pub trait HostInterface: Sync {
-    fn account_exists(&self, addr: &Address) -> bool;
-    fn get_storage(&self, addr: &Address, key: &Bytes32) -> Bytes32;
-    fn set_storage(&self, addr: &Address, key: &Bytes32, value: &Bytes32) -> StorageStatus;
-    fn get_balance(&self, addr: &Address) -> Bytes32;
-    fn get_code_size(&self, addr: &Address) -> usize;
-    fn get_code_hash(&self, addr: &Address) -> Bytes32;
-    fn selfdestruct(&self, addr: &Address, beneficiary: &Address);
-    fn get_tx_context(&self) -> (Bytes32, Address, Address, i64, i64, i64, Bytes32);
-    fn get_block_hash(&self, number: i64) -> Bytes32;
-    fn emit_log(&self, addr: &Address, topics: &Vec<Bytes32>, data: &Bytes);
+    fn account_exists(&mut self, addr: &Address) -> bool;
+    fn get_storage(&mut self, addr: &Address, key: &Bytes32) -> Bytes32;
+    fn set_storage(&mut self, addr: &Address, key: &Bytes32, value: &Bytes32) -> StorageStatus;
+    fn get_balance(&mut self, addr: &Address) -> Bytes32;
+    fn get_code_size(&mut self, addr: &Address) -> usize;
+    fn get_code_hash(&mut self, addr: &Address) -> Bytes32;
+    fn copy_code(
+        &mut self,
+        addr: &Address,
+        offset: &usize,
+        buffer_data: &*mut u8,
+        buffer_size: &usize,
+    ) -> usize;
+    fn selfdestruct(&mut self, addr: &Address, beneficiary: &Address);
+    fn get_tx_context(&mut self) -> (Bytes32, Address, Address, i64, i64, i64, Bytes32);
+    fn get_block_hash(&mut self, number: i64) -> Bytes32;
+    fn emit_log(&mut self, addr: &Address, topics: &Vec<Bytes32>, data: &Bytes);
     fn call(
-        &self,
+        &mut self,
         kind: CallKind,
         destination: &Address,
         sender: &Address,
@@ -58,7 +65,7 @@ pub unsafe extern "C" fn account_exists(
     _context: *mut ffi::evmc_context,
     address: *const ffi::evmc_address,
 ) -> bool {
-    match &CALLBACK.host_context {
+    match &mut CALLBACK.host_context {
         Some(host_context) => {
             return host_context.account_exists(&(*address).bytes);
         }
@@ -73,7 +80,7 @@ pub unsafe extern "C" fn get_storage(
     address: *const ffi::evmc_address,
     key: *const ffi::evmc_bytes32,
 ) -> ffi::evmc_bytes32 {
-    match &CALLBACK.host_context {
+    match &mut CALLBACK.host_context {
         Some(host_context) => {
             return ffi::evmc_bytes32 {
                 bytes: host_context.get_storage(&(*address).bytes, &(*key).bytes),
@@ -91,7 +98,7 @@ pub unsafe extern "C" fn set_storage(
     key: *const ffi::evmc_bytes32,
     value: *const ffi::evmc_bytes32,
 ) -> ffi::evmc_storage_status {
-    match &CALLBACK.host_context {
+    match &mut CALLBACK.host_context {
         Some(host_context) => {
             return host_context.set_storage(&(*address).bytes, &(*key).bytes, &(*value).bytes);
         }
@@ -105,7 +112,7 @@ pub unsafe extern "C" fn get_balance(
     _context: *mut ffi::evmc_context,
     address: *const ffi::evmc_address,
 ) -> ffi::evmc_uint256be {
-    match &CALLBACK.host_context {
+    match &mut CALLBACK.host_context {
         Some(host_context) => {
             return ffi::evmc_uint256be {
                 bytes: host_context.get_balance(&(*address).bytes),
@@ -121,7 +128,7 @@ pub unsafe extern "C" fn get_code_size(
     _context: *mut ffi::evmc_context,
     address: *const ffi::evmc_address,
 ) -> usize {
-    match &CALLBACK.host_context {
+    match &mut CALLBACK.host_context {
         Some(host_context) => {
             return host_context.get_code_size(&(*address).bytes);
         }
@@ -135,11 +142,33 @@ pub unsafe extern "C" fn get_code_hash(
     _context: *mut ffi::evmc_context,
     address: *const ffi::evmc_address,
 ) -> ffi::evmc_bytes32 {
-    match &CALLBACK.host_context {
+    match &mut CALLBACK.host_context {
         Some(host_context) => {
             return ffi::evmc_bytes32 {
                 bytes: host_context.get_code_hash(&(*address).bytes),
             };
+        }
+        None => {
+            panic!("Host function not implemented");
+        }
+    }
+}
+
+pub unsafe extern "C" fn copy_code(
+    _context: *mut ffi::evmc_context,
+    address: *const ffi::evmc_address,
+    code_offset: usize,
+    buffer_data: *mut u8,
+    buffer_size: usize,
+) -> usize {
+    match &mut CALLBACK.host_context {
+        Some(host_context) => {
+            return host_context.copy_code(
+                &(*address).bytes,
+                &code_offset,
+                &buffer_data,
+                &buffer_size,
+            );
         }
         None => {
             panic!("Host function not implemented");
@@ -152,7 +181,7 @@ pub unsafe extern "C" fn selfdestruct(
     address: *const ffi::evmc_address,
     beneficiary: *const ffi::evmc_address,
 ) {
-    match &CALLBACK.host_context {
+    match &mut CALLBACK.host_context {
         Some(host_context) => host_context.selfdestruct(&(*address).bytes, &(*beneficiary).bytes),
         None => {
             panic!("Host function not implemented");
@@ -161,7 +190,7 @@ pub unsafe extern "C" fn selfdestruct(
 }
 
 pub unsafe extern "C" fn get_tx_context(_context: *mut ffi::evmc_context) -> ffi::evmc_tx_context {
-    match &CALLBACK.host_context {
+    match &mut CALLBACK.host_context {
         Some(host_context) => {
             let (gas_price, origin, coinbase, number, timestamp, gas_limit, difficulty) =
                 host_context.get_tx_context();
@@ -185,7 +214,7 @@ pub unsafe extern "C" fn get_block_hash(
     _context: *mut ffi::evmc_context,
     number: i64,
 ) -> ffi::evmc_bytes32 {
-    match &CALLBACK.host_context {
+    match &mut CALLBACK.host_context {
         Some(host_context) => {
             return ffi::evmc_bytes32 {
                 bytes: host_context.get_block_hash(number),
@@ -205,7 +234,7 @@ pub unsafe extern "C" fn emit_log(
     topics: *const ffi::evmc_bytes32,
     topics_count: usize,
 ) {
-    match &CALLBACK.host_context {
+    match &mut CALLBACK.host_context {
         Some(host_context) => {
             let ts = &std::slice::from_raw_parts(topics, topics_count)
                 .iter()
@@ -227,7 +256,7 @@ pub unsafe extern "C" fn call(
     _context: *mut ffi::evmc_context,
     msg: *const ffi::evmc_message,
 ) -> ffi::evmc_result {
-    match &CALLBACK.host_context {
+    match &mut CALLBACK.host_context {
         Some(host_context) => {
             let msg = *msg;
             let (output, gas_left, create_address, status_code) = host_context.call(

@@ -76,7 +76,7 @@ impl EvmcVm {
         }
     }
 
-    pub fn execute<'a>(
+    pub fn execute(
         &self,
         host_context: Box<dyn HostInterface>,
         rev: ffi::evmc_revision,
@@ -131,6 +131,7 @@ impl EvmcVm {
                 code.as_ptr(),
                 code.len(),
             );
+            host::set_host_context(None);
             return (
                 std::slice::from_raw_parts(result.output_data, result.output_size),
                 result.gas_left,
@@ -145,16 +146,16 @@ fn get_evmc_context() -> ffi::evmc_context {
         host: Box::into_raw(Box::new(ffi::evmc_host_interface {
             account_exists: Some(host::account_exists),
             get_storage: Some(host::get_storage),
-            set_storage: None,
-            get_balance: None,
-            get_code_size: None,
-            get_code_hash: None,
+            set_storage: Some(host::set_storage),
+            get_balance: Some(host::get_balance),
+            get_code_size: Some(host::get_code_size),
+            get_code_hash: Some(host::get_code_hash),
             copy_code: None,
-            selfdestruct: None,
-            call: None,
-            get_tx_context: None,
-            get_block_hash: None,
-            emit_log: None,
+            selfdestruct: Some(host::selfdestruct),
+            call: Some(host::call),
+            get_tx_context: Some(host::get_tx_context),
+            get_block_hash: Some(host::get_block_hash),
+            emit_log: Some(host::emit_log),
         })),
     }
 }

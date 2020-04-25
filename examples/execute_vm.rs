@@ -14,40 +14,75 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use clap::{crate_authors, crate_version, App, Arg};
+use std::collections::BTreeMap;
+use std::env;
+use std::fs::File;
+use std::io::Read;
+
 use rust_ssvm::*;
 
-struct HostContext;
+struct HostContext {
+    storage: BTreeMap<Bytes32, Bytes32>,
+}
+
+impl HostContext {
+    fn new() -> HostContext {
+        HostContext {
+            storage: BTreeMap::new(),
+        }
+    }
+}
+
 impl HostInterface for HostContext {
-    fn account_exists(&self, _addr: &[u8; 20]) -> bool {
-        println!("callback account_exists");
+    fn account_exists(&mut self, _addr: &[u8; 20]) -> bool {
+        println!("Host: account_exists");
         return true;
     }
-    fn get_storage(&self, _addr: &Address, _key: &Bytes32) -> Bytes32 {
-        println!("callback get_storage");
+    fn get_storage(&mut self, _addr: &Address, key: &Bytes32) -> Bytes32 {
+        println!("Host: get_storage");
+        let value = self.storage.get(key);
+        let ret: Bytes32;
+        match value {
+            Some(value) => ret = value.to_owned(),
+            None => ret = [0u8; BYTES32_LENGTH],
+        }
+        println!("{:?} -> {:?}", hex::encode(key), hex::encode(ret));
+        return ret;
+    }
+    fn set_storage(&mut self, _addr: &Address, key: &Bytes32, value: &Bytes32) -> StorageStatus {
+        println!("Host: set_storage");
+        println!("{:?} -> {:?}", hex::encode(key), hex::encode(value));
+        self.storage.insert(key.to_owned(), value.to_owned());
+        return StorageStatus::EVMC_STORAGE_MODIFIED;
+    }
+    fn get_balance(&mut self, _addr: &Address) -> Bytes32 {
+        println!("Host: get_balance");
         return [0u8; BYTES32_LENGTH];
     }
-
-    fn set_storage(&self, _addr: &Address, _key: &Bytes32, _value: &Bytes32) -> StorageStatus {
-        println!("callback set_storage");
-        return StorageStatus::EVMC_STORAGE_UNCHANGED;
-    }
-    fn get_balance(&self, _addr: &Address) -> Bytes32 {
-        println!("callback get_balance");
-        return [0u8; BYTES32_LENGTH];
-    }
-    fn get_code_size(&self, _addr: &Address) -> usize {
-        println!("callback get_code_size");
+    fn get_code_size(&mut self, _addr: &Address) -> usize {
+        println!("Host: get_code_size");
         return 0;
     }
-    fn get_code_hash(&self, _addr: &Address) -> Bytes32 {
-        println!("callback get_code_hash");
+    fn get_code_hash(&mut self, _addr: &Address) -> Bytes32 {
+        println!("Host: get_code_hash");
         return [0u8; BYTES32_LENGTH];
     }
-    fn selfdestruct(&self, _addr: &Address, _beneficiary: &Address) {
-        println!("callback selfdestruct");
+    fn copy_code(
+        &mut self,
+        _addr: &Address,
+        _offset: &usize,
+        _buffer_data: &*mut u8,
+        _buffer_size: &usize,
+    ) -> usize {
+        println!("Host: copy_code");
+        return 0;
     }
-    fn get_tx_context(&self) -> (Bytes32, Address, Address, i64, i64, i64, Bytes32) {
-        println!("callback get_tx_context");
+    fn selfdestruct(&mut self, _addr: &Address, _beneficiary: &Address) {
+        println!("Host: selfdestruct");
+    }
+    fn get_tx_context(&mut self) -> (Bytes32, Address, Address, i64, i64, i64, Bytes32) {
+        println!("Host: get_tx_context");
         return (
             [0u8; BYTES32_LENGTH],
             [0u8; ADDRESS_LENGTH],
@@ -58,15 +93,15 @@ impl HostInterface for HostContext {
             [0u8; BYTES32_LENGTH],
         );
     }
-    fn get_block_hash(&self, _number: i64) -> Bytes32 {
-        println!("callback get_block_hash");
+    fn get_block_hash(&mut self, _number: i64) -> Bytes32 {
+        println!("Host: get_block_hash");
         return [0u8; BYTES32_LENGTH];
     }
-    fn emit_log(&self, _addr: &Address, _topics: &Vec<Bytes32>, _data: &Bytes) {
-        println!("callback emit_log");
+    fn emit_log(&mut self, _addr: &Address, _topics: &Vec<Bytes32>, _data: &Bytes) {
+        println!("Host: emit_log");
     }
     fn call(
-        &self,
+        &mut self,
         _kind: CallKind,
         _destination: &Address,
         _sender: &Address,
@@ -76,7 +111,7 @@ impl HostInterface for HostContext {
         _depth: i32,
         _is_static: bool,
     ) -> (Vec<u8>, i64, Address, StatusCode) {
-        println!("callback call");
+        println!("Host: call");
         return (
             vec![0u8],
             0,
@@ -86,27 +121,64 @@ impl HostInterface for HostContext {
     }
 }
 
+impl Drop for HostContext {
+    fn drop(&mut self) {
+        println!("Dump storage:");
+        for (key, value) in &self.storage {
+            println!("{:?} -> {:?}", hex::encode(key), hex::encode(value));
+        }
+    }
+}
+
+fn read_a_file(path: &str) -> std::io::Result<Vec<u8>> {
+    let mut file = File::open(path)?;
+    let mut data = Vec::new();
+    file.read_to_end(&mut data)?;
+    return Ok(data);
+}
+
 fn main() {
+    let matches = App::new("Execute VM")
+        .version(crate_version!())
+        .author(crate_authors!())
+        .about("Demo how to execute WASM bytecode use rust-ssvm")
+        .arg(
+            Arg::with_name("file")
+                .short("f")
+                .long("file")
+                .takes_value(true)
+                .help("wasm file path"),
+        )
+        .get_matches();
+    let file_path = matches.value_of("file").unwrap();
+
     // let lib_path = "Choose specific .so path";
     // let (_vm, _result) = load(lib_path);
     let _vm = create();
 
-    println!("{:?}", (_vm.get_name(), _vm.get_version()));
-
-    let host_context = HostContext;
-    _vm.execute(
-        Box::new(host_context),
-        Revision::EVMC_BYZANTIUM,
-        CallKind::EVMC_CALL,
-        false,
-        123,
-        456,
-        &[32u8; 20],
-        &[128u8; 20],
-        &[0u8; 0],
-        &[0u8; 32],
-        &[b'\0', b'a', b's', b'm'],
-        &[0u8; 32],
-    );
+    println!("Instantiate: {:?}", (_vm.get_name(), _vm.get_version()));
+    match read_a_file(file_path) {
+        Ok(code) => {
+            let host_context = HostContext::new();
+            let (output, gas_left, status_code) = _vm.execute(
+                Box::new(host_context),
+                Revision::EVMC_BYZANTIUM,
+                CallKind::EVMC_CALL,
+                false,
+                123,
+                50000000,
+                &[32u8; 20],
+                &[128u8; 20],
+                &[0u8; 0],
+                &[0u8; 32],
+                &code[..],
+                &[0u8; 32],
+            );
+            println!("Output:  {:?}", hex::encode(output));
+            println!("GasLeft: {:?}", gas_left);
+            println!("Status:  {:?}", status_code);
+        }
+        Err(e) => println!("Error load wasm file: {:?}, {:?}", file_path, e),
+    }
     _vm.destroy();
 }

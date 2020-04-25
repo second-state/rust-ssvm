@@ -14,19 +14,26 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::path::Path;
-extern crate cmake;
-use cmake::Config;
-
-fn build_link_ssvm_dylib() {
-    let dst = Config::new("SSVM")
-        .no_build_target(true)
-        .build();
-    let evmcssvm_path = Path::new(&dst).join("build/tools/ssvm-evmc");
-    println!("cargo:rustc-link-search=native={}", evmcssvm_path.display());
-    println!("cargo:rustc-link-lib=dylib=ssvmEVMC");
-}
-
-fn main() {
-    build_link_ssvm_dylib();
+object "fib" {
+  code {
+    let f := 1
+    let s := 1
+    let next
+    for { let i := 0 } ltu256(i, 10) { i := addu256(i, 1)}
+    {
+      if ltu256(i, 2) {
+        sstore(i, 1)
+      }
+      if gtu256(i, 1) {
+        next := addu256(s, f)
+        f := s
+        s := next
+        sstore(i, s)
+      }
+    }
+    mstore(0, next)
+    return(0, 32)
+  }
+  // Unreferenced data is not added to the assembled bytecode.
+  data "str" "Yul Fibonacci"
 }
