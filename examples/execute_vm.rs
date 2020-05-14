@@ -20,7 +20,9 @@ use std::env;
 use std::fs::File;
 use std::io::Read;
 
-use rust_ssvm::*;
+use rust_ssvm::create;
+use rust_ssvm::host::HostInterface;
+use rust_ssvm::types::*;
 
 struct HostContext {
     storage: BTreeMap<Bytes32, Bytes32>,
@@ -35,7 +37,7 @@ impl HostContext {
 }
 
 impl HostInterface for HostContext {
-    fn account_exists(&mut self, _addr: &[u8; 20]) -> bool {
+    fn account_exists(&mut self, _addr: &Address) -> bool {
         println!("Host: account_exists");
         return true;
     }
@@ -106,7 +108,7 @@ impl HostInterface for HostContext {
         _destination: &Address,
         _sender: &Address,
         _value: &Bytes32,
-        _input: &[u8],
+        _input: &Bytes,
         _gas: i64,
         _depth: i32,
         _is_static: bool,

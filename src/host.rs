@@ -14,10 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod types;
+use crate::types::*;
 use evmc_sys as ffi;
 use std::mem;
-pub use types::*;
 
 pub trait HostInterface {
     fn account_exists(&mut self, addr: &Address) -> bool;
@@ -43,7 +42,7 @@ pub trait HostInterface {
         destination: &Address,
         sender: &Address,
         value: &Bytes32,
-        input: &[u8],
+        input: &Bytes,
         gas: i64,
         depth: i32,
         is_static: bool,
@@ -62,7 +61,26 @@ pub fn set_host_context(context: Option<Box<dyn HostInterface>>) {
     }
 }
 
-pub unsafe extern "C" fn account_exists(
+pub fn get_evmc_context() -> ffi::evmc_context {
+    ffi::evmc_context {
+        host: Box::into_raw(Box::new(ffi::evmc_host_interface {
+            account_exists: Some(account_exists),
+            get_storage: Some(get_storage),
+            set_storage: Some(set_storage),
+            get_balance: Some(get_balance),
+            get_code_size: Some(get_code_size),
+            get_code_hash: Some(get_code_hash),
+            copy_code: Some(copy_code),
+            selfdestruct: Some(selfdestruct),
+            call: Some(call),
+            get_tx_context: Some(get_tx_context),
+            get_block_hash: Some(get_block_hash),
+            emit_log: Some(emit_log),
+        })),
+    }
+}
+
+unsafe extern "C" fn account_exists(
     _context: *mut ffi::evmc_context,
     address: *const ffi::evmc_address,
 ) -> bool {
@@ -71,12 +89,12 @@ pub unsafe extern "C" fn account_exists(
             return host_context.account_exists(&(*address).bytes);
         }
         None => {
-            panic!("Host function not implemented");
+            panic!("Host context not implemented");
         }
     }
 }
 
-pub unsafe extern "C" fn get_storage(
+unsafe extern "C" fn get_storage(
     _context: *mut ffi::evmc_context,
     address: *const ffi::evmc_address,
     key: *const ffi::evmc_bytes32,
@@ -88,12 +106,12 @@ pub unsafe extern "C" fn get_storage(
             };
         }
         None => {
-            panic!("Host function not implemented");
+            panic!("Host context not implemented");
         }
     }
 }
 
-pub unsafe extern "C" fn set_storage(
+unsafe extern "C" fn set_storage(
     _context: *mut ffi::evmc_context,
     address: *const ffi::evmc_address,
     key: *const ffi::evmc_bytes32,
@@ -104,12 +122,12 @@ pub unsafe extern "C" fn set_storage(
             return host_context.set_storage(&(*address).bytes, &(*key).bytes, &(*value).bytes);
         }
         None => {
-            panic!("Host function not implemented");
+            panic!("Host context not implemented");
         }
     }
 }
 
-pub unsafe extern "C" fn get_balance(
+unsafe extern "C" fn get_balance(
     _context: *mut ffi::evmc_context,
     address: *const ffi::evmc_address,
 ) -> ffi::evmc_uint256be {
@@ -120,12 +138,12 @@ pub unsafe extern "C" fn get_balance(
             };
         }
         None => {
-            panic!("Host function not implemented");
+            panic!("Host context not implemented");
         }
     }
 }
 
-pub unsafe extern "C" fn get_code_size(
+unsafe extern "C" fn get_code_size(
     _context: *mut ffi::evmc_context,
     address: *const ffi::evmc_address,
 ) -> usize {
@@ -134,12 +152,12 @@ pub unsafe extern "C" fn get_code_size(
             return host_context.get_code_size(&(*address).bytes);
         }
         None => {
-            panic!("Host function not implemented");
+            panic!("Host context not implemented");
         }
     }
 }
 
-pub unsafe extern "C" fn get_code_hash(
+unsafe extern "C" fn get_code_hash(
     _context: *mut ffi::evmc_context,
     address: *const ffi::evmc_address,
 ) -> ffi::evmc_bytes32 {
@@ -150,12 +168,12 @@ pub unsafe extern "C" fn get_code_hash(
             };
         }
         None => {
-            panic!("Host function not implemented");
+            panic!("Host context not implemented");
         }
     }
 }
 
-pub unsafe extern "C" fn copy_code(
+unsafe extern "C" fn copy_code(
     _context: *mut ffi::evmc_context,
     address: *const ffi::evmc_address,
     code_offset: usize,
@@ -172,12 +190,12 @@ pub unsafe extern "C" fn copy_code(
             );
         }
         None => {
-            panic!("Host function not implemented");
+            panic!("Host context not implemented");
         }
     }
 }
 
-pub unsafe extern "C" fn selfdestruct(
+unsafe extern "C" fn selfdestruct(
     _context: *mut ffi::evmc_context,
     address: *const ffi::evmc_address,
     beneficiary: *const ffi::evmc_address,
@@ -185,12 +203,12 @@ pub unsafe extern "C" fn selfdestruct(
     match &mut CALLBACK.host_context {
         Some(host_context) => host_context.selfdestruct(&(*address).bytes, &(*beneficiary).bytes),
         None => {
-            panic!("Host function not implemented");
+            panic!("Host context not implemented");
         }
     }
 }
 
-pub unsafe extern "C" fn get_tx_context(_context: *mut ffi::evmc_context) -> ffi::evmc_tx_context {
+unsafe extern "C" fn get_tx_context(_context: *mut ffi::evmc_context) -> ffi::evmc_tx_context {
     match &mut CALLBACK.host_context {
         Some(host_context) => {
             let (gas_price, origin, coinbase, number, timestamp, gas_limit, difficulty) =
@@ -206,12 +224,12 @@ pub unsafe extern "C" fn get_tx_context(_context: *mut ffi::evmc_context) -> ffi
             };
         }
         None => {
-            panic!("Host function not implemented");
+            panic!("Host context not implemented");
         }
     }
 }
 
-pub unsafe extern "C" fn get_block_hash(
+unsafe extern "C" fn get_block_hash(
     _context: *mut ffi::evmc_context,
     number: i64,
 ) -> ffi::evmc_bytes32 {
@@ -222,12 +240,12 @@ pub unsafe extern "C" fn get_block_hash(
             };
         }
         None => {
-            panic!("Host function not implemented");
+            panic!("Host context not implemented");
         }
     }
 }
 
-pub unsafe extern "C" fn emit_log(
+unsafe extern "C" fn emit_log(
     _context: *mut ffi::evmc_context,
     address: *const ffi::evmc_address,
     data: *const u8,
@@ -248,7 +266,7 @@ pub unsafe extern "C" fn emit_log(
             );
         }
         None => {
-            panic!("Host function not implemented");
+            panic!("Host context not implemented");
         }
     }
 }
@@ -293,7 +311,7 @@ pub unsafe extern "C" fn call(
             };
         }
         None => {
-            panic!("Host function not implemented");
+            panic!("Host context not implemented");
         }
     }
 }
