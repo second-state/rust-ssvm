@@ -253,6 +253,13 @@ pub unsafe extern "C" fn emit_log(
     }
 }
 
+unsafe extern "C" fn release(result: *const ffi::evmc_result) {
+    drop(std::slice::from_raw_parts(
+        (*result).output_data,
+        (*result).output_size,
+    ));
+}
+
 pub unsafe extern "C" fn call(
     _context: *mut ffi::evmc_context,
     msg: *const ffi::evmc_message,
@@ -278,7 +285,7 @@ pub unsafe extern "C" fn call(
                 gas_left: gas_left,
                 output_data: ptr,
                 output_size: len,
-                release: None,
+                release: Some(release),
                 create_address: ffi::evmc_address {
                     bytes: create_address,
                 },
