@@ -16,9 +16,10 @@
 
 pub mod types;
 use evmc_sys as ffi;
+use std::mem;
 pub use types::*;
 
-pub trait HostInterface: Sync {
+pub trait HostInterface {
     fn account_exists(&mut self, addr: &Address) -> bool;
     fn get_storage(&mut self, addr: &Address, key: &Bytes32) -> Bytes32;
     fn set_storage(&mut self, addr: &Address, key: &Bytes32, value: &Bytes32) -> StorageStatus;
@@ -269,11 +270,14 @@ pub unsafe extern "C" fn call(
                 msg.depth,
                 msg.flags != 0,
             );
+            let ptr = output.as_ptr();
+            let len = output.len();
+            mem::forget(output);
             return ffi::evmc_result {
                 status_code: status_code,
                 gas_left: gas_left,
-                output_data: output.as_ptr(),
-                output_size: output.len(),
+                output_data: ptr,
+                output_size: len,
                 release: None,
                 create_address: ffi::evmc_address {
                     bytes: create_address,

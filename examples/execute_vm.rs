@@ -113,8 +113,8 @@ impl HostInterface for HostContext {
     ) -> (Vec<u8>, i64, Address, StatusCode) {
         println!("Host: call");
         return (
-            vec![0u8],
-            0,
+            vec![0u8; BYTES32_LENGTH],
+            _gas,
             [0u8; ADDRESS_LENGTH],
             StatusCode::EVMC_SUCCESS,
         );
