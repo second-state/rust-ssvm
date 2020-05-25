@@ -2,19 +2,21 @@
 
 This project provides SSVM a Rust interface by using [EVMC](https://github.com/ethereum/evmc) (Ethereum Client-VM Connector API) to binding SSVM and host written in Rust.
 
-The software architecture of rust-ssvm was inspired by [go-ethereum](https://github.com/ethereum/go-ethereum) about how to use EVMC connect Ewasm VM ([Hera](https://github.com/ewasm/hera)) with host written in golang.
+We extend evmc rust binding module to include [evmc-client](https://github.com/second-state/evmc/releases/tag/v6.3.1-rust-evmc-client) base on evmc version 6.3.1 for now.
+
+The software architecture of **evmc-client** was inspired by [go-ethereum](https://github.com/ethereum/go-ethereum) about how to use EVMC connect Ewasm VM ([Hera](https://github.com/ewasm/hera)) with host written in golang.
 
 
-- Design architecture
+- EVMC-Client design architecture
 ```
-rust-ssvm :                                  ┌───────────────────────────────────────────────┐
-stack diagram                                │                  rust-ssvm                    │
+evmc-client :                                ┌───────────────────────────────────────────────┐
+stack diagram                                │                 evmc-client                   │
                                              ├───────────────────────────────────────────────┤
                                              │            lib.rs (pub interface)             │
-                                             ├──────────────────────┬────────────┬───────────┤
-                                             │  host.rs             │    SSVM    │ loader.rs │
-go-ethereum :                                │  (hook host context) │            └───────────┤
-sequential diagram
+                                             ├─────────────────────────────────┬─────────────┤
+                                             │   host.rs (hook host context)   │  loader.rs  │
+go-ethereum :                                ┆                                               ┆
+sequential diagram                           ┆                                               ┆
                                                                          ┌───────────────────┐
 ┌───────────────────┐ ┌────────────────────┐ ┌─────────────────────────┐ │     C module      │
 │geth/core/vm/evm.go│ │geth/core/vm/evmc.go│ │evmc/bindings/.../evmc.go│ │ex. loader and hera│
