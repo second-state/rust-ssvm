@@ -21,7 +21,7 @@ use std::fs::File;
 use std::io::Read;
 
 use rust_ssvm::create;
-use rust_ssvm::host::HostInterface;
+use rust_ssvm::host::{HostInterface, TxContext};
 use rust_ssvm::types::*;
 
 struct HostContext {
@@ -83,9 +83,9 @@ impl HostInterface for HostContext {
     fn selfdestruct(&mut self, _addr: &Address, _beneficiary: &Address) {
         println!("Host: selfdestruct");
     }
-    fn get_tx_context(&mut self) -> (Bytes32, Address, Address, i64, i64, i64, Bytes32) {
+    fn get_tx_context(&mut self) -> TxContext {
         println!("Host: get_tx_context");
-        return (
+        return TxContext::new(
             [0u8; BYTES32_LENGTH],
             [0u8; ADDRESS_LENGTH],
             [0u8; ADDRESS_LENGTH],

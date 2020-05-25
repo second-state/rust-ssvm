@@ -14,10 +14,4 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod host;
-mod loader;
-mod ssvm;
-pub mod types;
-
-pub use self::loader::EvmcLoaderErrorCode;
-pub use self::ssvm::{create, load, EvmcVm};
+pub use evmc_client::*;
