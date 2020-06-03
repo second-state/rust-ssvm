@@ -160,5 +160,8 @@ Status:  EVMC_SUCCESS
  }
 ```
 
+## EWASM Test
+Refer to the [EWASM Test Guide](./docs/EWASM_TEST.md) for more details.
+
 ## License
 Rust SSVM is [AGPL 3.0 licensed](LICENSE).
