@@ -164,4 +164,4 @@ Status:  EVMC_SUCCESS
 Refer to the [EWASM Test Guide](./docs/EWASM_TEST.md) for more details.
 
 ## License
-Rust SSVM is [AGPL 3.0 licensed](LICENSE).
+Rust SSVM has dual license, including [AGPL 3.0 license](LICENSE.AGPL-3.0) and [APACHE-2 license](LICENSE.APACHE-2).
