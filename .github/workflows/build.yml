@@ -1,0 +1,40 @@
+name: build
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build_test:
+    runs-on: ubuntu-latest
+    container:
+      image: secondstate/ssvm:latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Set up cargo
+      run: |
+        curl https://sh.rustup.rs -sSf | sh -s -- -y
+      env:
+        HOME: /root
+
+    - name: Build rust-ssvm lib
+      run: |
+        export PATH="$HOME/.cargo/bin:$PATH"
+        cargo build -v
+      env:
+        HOME: /root
+
+    - name: Test rust-ssvm
+      run: |
+        export PATH="$HOME/.cargo/bin:$PATH"
+        cargo run --example execute_vm -v -- -f=examples/fib.wasm
+      env:
+        HOME: /root
