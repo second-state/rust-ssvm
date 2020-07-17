@@ -21,7 +21,7 @@ use std::fs::File;
 use std::io::Read;
 
 use rust_ssvm::create;
-use rust_ssvm::host::HostInterface;
+use rust_ssvm::host::HostContext as HostInterface;
 use rust_ssvm::types::*;
 
 struct HostContext {
