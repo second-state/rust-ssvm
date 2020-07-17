@@ -21,7 +21,7 @@ use std::fs::File;
 use std::io::Read;
 
 use rust_ssvm::create;
-use rust_ssvm::host::HostInterface;
+use rust_ssvm::host::HostContext as HostInterface;
 use rust_ssvm::types::*;
 
 struct HostContext {
@@ -83,7 +83,7 @@ impl HostInterface for HostContext {
     fn selfdestruct(&mut self, _addr: &Address, _beneficiary: &Address) {
         println!("Host: selfdestruct");
     }
-    fn get_tx_context(&mut self) -> (Bytes32, Address, Address, i64, i64, i64, Bytes32) {
+    fn get_tx_context(&mut self) -> (Bytes32, Address, Address, i64, i64, i64, Bytes32, Bytes32) {
         println!("Host: get_tx_context");
         return (
             [0u8; BYTES32_LENGTH],
@@ -92,6 +92,7 @@ impl HostInterface for HostContext {
             0,
             0,
             0,
+            [0u8; BYTES32_LENGTH],
             [0u8; BYTES32_LENGTH],
         );
     }
@@ -104,7 +105,7 @@ impl HostInterface for HostContext {
     }
     fn call(
         &mut self,
-        _kind: CallKind,
+        _kind: MessageKind,
         _destination: &Address,
         _sender: &Address,
         _value: &Bytes32,
@@ -165,7 +166,7 @@ fn main() {
             let (output, gas_left, status_code) = _vm.execute(
                 Box::new(host_context),
                 Revision::EVMC_BYZANTIUM,
-                CallKind::EVMC_CALL,
+                MessageKind::EVMC_CALL,
                 false,
                 123,
                 50000000,
