@@ -112,6 +112,7 @@ impl HostInterface for HostContext {
         _gas: i64,
         _depth: i32,
         _is_static: bool,
+        _salt: &Bytes32,
     ) -> (Vec<u8>, i64, Address, StatusCode) {
         println!("Host: call");
         return (
@@ -161,9 +162,9 @@ fn main() {
     println!("Instantiate: {:?}", (_vm.get_name(), _vm.get_version()));
     match read_a_file(file_path) {
         Ok(code) => {
-            let host_context = HostContext::new();
+            let mut host_context = HostContext::new();
             let (output, gas_left, status_code) = _vm.execute(
-                Box::new(host_context),
+                &mut host_context,
                 Revision::EVMC_BYZANTIUM,
                 CallKind::EVMC_CALL,
                 false,
