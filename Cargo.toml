@@ -9,7 +9,7 @@ repository = "https://github.com/second-state/rust-ssvm/"
 build="build.rs"
 
 [dependencies]
-evmc-client = { git = "https://github.com/second-state/evmc", tag = "v7.4.0-rust-evmc-client-rc.1" }
+evmc-client = { git = "https://github.com/second-state/evmc", tag = "v7.4.0-rust-evmc-client-rc.2" }
 libloading = "0.5"
 hex = "0.4"
 clap = "2.33.0"
