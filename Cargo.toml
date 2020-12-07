@@ -1,6 +1,6 @@
 [package]
 name = "rust-ssvm"
-version = "0.0.4"
+version = "0.0.1-rc1"
 license = "AGPL-3.0"
 authors = ["SecondState"]
 description = "Rust-SSVM - a Portable EWASM Engine Binding Rust Interface"
@@ -9,7 +9,7 @@ repository = "https://github.com/second-state/rust-ssvm/"
 build="build.rs"
 
 [dependencies]
-evmc-client = { version = "6.3.1", package="ssvm-evmc-client" }
+evmc-client = { version = "6.3.1-rc1", package="ssvm-evmc-client" }
 libloading = "0.5"
 hex = "0.4"
 clap = "2.33.0"
