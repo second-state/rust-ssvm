@@ -1,4 +1,6 @@
-# Rust SSVM ![build](https://github.com/second-state/rust-ssvm/workflows/build/badge.svg)
+# Rust SSVM
+![build](https://github.com/second-state/rust-ssvm/workflows/build/badge.svg)
+[![Generic badge](https://img.shields.io/badge/Doc-master-green.svg)](https://second-state.github.io/rust-ssvm/rust_ssvm/index.html)
 
 This project provides SSVM a Rust interface by using [EVMC](https://github.com/ethereum/evmc) (Ethereum Client-VM Connector API) to binding SSVM and host written in Rust.
 
